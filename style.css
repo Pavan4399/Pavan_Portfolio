@@ -188,14 +188,14 @@ a.nav-contact-value:hover {
 }
 
 /* ===== Content Card (inner) ===== */
-.content-card {
+/* .content-card {
     background: #ffffff;
     border-radius: 18px;
     padding: 36px;
     border: 1px solid rgba(0, 0, 0, 0.04);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     min-height: 300px;
-}
+} */
 
 /* ===== Section ===== */
 .section {
@@ -630,6 +630,19 @@ says .section {
     border: none;
     border-radius: 10px;
 }
+.resume-iframe-mobile {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .resume-iframe-desktop {
+    display: none !important;
+  }
+
+  .resume-iframe-mobile {
+    display: block !important;
+  }
+}
 
 .resume-fallback {
     text-align: center;
@@ -986,7 +999,7 @@ says .section {
     }
 
     .resume-iframe {
-        height: 400px;
+        height: 550px;
     }
 
     .btn-download-resume,
@@ -1126,7 +1139,7 @@ says .section {
     }
 
     .resume-iframe {
-        height: 300px;
+        height: 500px;
     }
 
     .btn-contact-me {
