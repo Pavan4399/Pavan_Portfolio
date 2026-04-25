@@ -48,6 +48,45 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+    document.addEventListener('DOMContentLoaded', () => {
+
+  // Mobile resume preview (Google Docs Viewer)
+  const mobileIframe = document.querySelector('.resume-iframe-mobile');
+
+  if (mobileIframe) {
+    const pdfUrl = 'https://pavan-maddipatla.vercel.app/assets/resume.pdf';
+    mobileIframe.src ='https://docs.google.com/gview?url=' + encodeURIComponent(pdfUrl) +'&embedded=true';
+  }
+
+  // Resume download button
+  const downloadBtn = document.getElementById('downloadResumeBtn');
+
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      fetch(downloadBtn.href)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+
+          a.href = url;
+          a.download = 'Pavan_Maddipatla_resume.pdf';
+
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+
+          URL.revokeObjectURL(url);
+        })
+        .catch(() => {
+          window.open(downloadBtn.href, '_blank');
+        });
+    });
+  }
+
+});
 
     // Resume PDF fallback: if iframe fails to load, show fallback message
     const resumeIframe = document.querySelector('.resume-iframe');
