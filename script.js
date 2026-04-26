@@ -54,46 +54,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Resume iframe — if PDF renders in iframe, show it; otherwise show Preview button
-    const iframe = document.getElementById('resumeIframe');
-    const card = document.getElementById('resumePreviewCard');
-    const prevBtn = document.getElementById('previewResumeBtn');
+    // Resume  — Preview opens PDF in new tab  (works on all devices/browsers)
+    // const iframe = document.getElementById('resumeIframe');
+    // const card = document.getElementById('resumePreviewCard');
+    // const prevBtn = document.getElementById('previewResumeBtn');
+       const dlBtn = document.getElementById('downloadResumeBtn');
+       const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+       if (isIos && dlBtn) {
+           dlBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.open(dlBtn.href, '_blank');
+       });
+    // if (iframe && card && prevBtn) {
+    //     let pdfLoaded = false;
 
-    if (iframe && card && prevBtn) {
-        let pdfLoaded = false;
+    //     iframe.addEventListener('load', () => {
+    //         try {
+    //             // If we can access contentDocument, browser loaded it as HTML (not PDF plugin)
+    //             const doc = iframe.contentWindow.document;
+    //             const body = doc.body;
+    //             // Empty body or embed/object = PDF plugin handling it
+    //             if (body && body.children.length > 0) {
+    //                 const tag = body.children[0].tagName;
+    //                 if (tag === 'EMBED' || tag === 'OBJECT') { pdfLoaded = true; return; }
+    //             }
+    //             // If body is empty or has no meaningful content, PDF didn't render
+    //             if (!body || body.scrollHeight < 100) {
+    //                 card.style.display = 'none';
+    //                 prevBtn.style.display = 'inline-flex';
+    //             } else { pdfLoaded = true; }
+    //         } catch (_) {
+    //             // Cross-origin error = PDF plugin rendered it natively (good)
+    //             pdfLoaded = true;
+    //         }
+    //     });
 
-        iframe.addEventListener('load', () => {
-            try {
-                // If we can access contentDocument, browser loaded it as HTML (not PDF plugin)
-                const doc = iframe.contentWindow.document;
-                const body = doc.body;
-                // Empty body or embed/object = PDF plugin handling it
-                if (body && body.children.length > 0) {
-                    const tag = body.children[0].tagName;
-                    if (tag === 'EMBED' || tag === 'OBJECT') { pdfLoaded = true; return; }
-                }
-                // If body is empty or has no meaningful content, PDF didn't render
-                if (!body || body.scrollHeight < 100) {
-                    card.style.display = 'none';
-                    prevBtn.style.display = 'inline-flex';
-                } else { pdfLoaded = true; }
-            } catch (_) {
-                // Cross-origin error = PDF plugin rendered it natively (good)
-                pdfLoaded = true;
-            }
-        });
+    //     iframe.addEventListener('error', () => {
+    //         card.style.display = 'none';
+    //         prevBtn.style.display = 'inline-flex';
+    //     });
 
-        iframe.addEventListener('error', () => {
-            card.style.display = 'none';
-            prevBtn.style.display = 'inline-flex';
-        });
-
-        // Safety net: if nothing loaded after 5s, show fallback
-        setTimeout(() => {
-            if (!pdfLoaded) {
-                card.style.display = 'none';
-                prevBtn.style.display = 'inline-flex';
-            }
-        }, 5000);
+    //     // Safety net: if nothing loaded after 5s, show fallback
+    //     setTimeout(() => {
+    //         if (!pdfLoaded) {
+    //             card.style.display = 'none';
+    //             prevBtn.style.display = 'inline-flex';
+    //         }
+    //     }, 5000);
     }
 });
