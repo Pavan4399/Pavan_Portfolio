@@ -1,114 +1,99 @@
-// Navigation & Section switching
 document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
     const sections = document.querySelectorAll('.section');
     const heroTitle = document.getElementById('heroTitle');
     const heroSubtitle = document.getElementById('heroSubtitle');
 
-    const sectionMeta = {
-        home: { title: 'Home', subtitle: 'Let\'s connect on LinkedIn' },
-        about: { title: 'About Me', subtitle: 'Specializing in intuitive, scalable, and visually engaging web applications' },
-        work: { title: 'Work', subtitle: 'Experience, skills, and technologies I work with' },
-        resume: { title: 'Resume', subtitle: 'Download or preview my professional resume' },
-        contact: { title: 'Contact', subtitle: 'Let\'s connect — I\'m open to new opportunities' }
+    const meta = {
+        home: ['Home', 'Let\'s connect on LinkedIn'],
+        about: ['About Me', 'Specializing in intuitive, scalable, and visually engaging web applications'],
+        work: ['Work', 'Experience, skills, and technologies I work with'],
+        resume: ['Resume', 'Download or preview my professional resume'],
+        contact: ['Contact', 'Let\'s connect — I\'m open to new opportunities']
     };
 
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const target = link.dataset.section;
+    // Tab switching
+    navLinks.forEach(link => link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = link.dataset.section;
+        navLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        sections.forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if (meta[id]) { heroTitle.textContent = meta[id][0]; heroSubtitle.textContent = meta[id][1]; }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }));
 
-            navLinks.forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
+    // Copy to clipboard
+    document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const text = btn.getAttribute('data-copy');
+        if (!text) return;
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => showCopied(btn)).catch(() => fallbackCopy(text, btn));
+        } else { fallbackCopy(text, btn); }
+    }));
 
-            sections.forEach(s => s.classList.remove('active'));
-            document.getElementById(target).classList.add('active');
+    function fallbackCopy(text, btn) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        try { document.execCommand('copy'); showCopied(btn); } catch (_) { }
+        document.body.removeChild(ta);
+    }
 
-            // Update hero heading
-            const meta = sectionMeta[target];
-            if (meta) {
-                heroTitle.textContent = meta.title;
-                heroSubtitle.innerHTML = meta.subtitle;
-            }
-        });
-    });
+    function showCopied(btn) {
+        btn.classList.add('copied');
+        const icon = btn.querySelector('i');
+        if (icon) {
+            icon.className = 'fas fa-check';
+            setTimeout(() => { btn.classList.remove('copied'); icon.className = 'fas fa-copy'; }, 1500);
+        }
+    }
 
-    // Copy button functionality
-    document.querySelectorAll('.copy-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const text = btn.getAttribute('data-copy');
-            navigator.clipboard.writeText(text).then(() => {
-                btn.classList.add('copied');
-                const icon = btn.querySelector('i');
-                icon.className = 'fas fa-check';
-                setTimeout(() => {
-                    btn.classList.remove('copied');
-                    icon.className = 'fas fa-copy';
-                }, 1500);
-            });
-        });
-    });
-    document.addEventListener('DOMContentLoaded', () => {
+    // Resume iframe — if PDF renders in iframe, show it; otherwise show Preview button
+    const iframe = document.getElementById('resumeIframe');
+    const card = document.getElementById('resumePreviewCard');
+    const prevBtn = document.getElementById('previewResumeBtn');
 
-  // Mobile resume preview (Google Docs Viewer)
-  const mobileIframe = document.querySelector('.resume-iframe-mobile');
+    if (iframe && card && prevBtn) {
+        let pdfLoaded = false;
 
-  if (mobileIframe) {
-    const pdfUrl = 'https://pavan-maddipatla.vercel.app/assets/resume.pdf';
-    mobileIframe.src ='https://docs.google.com/gview?url=' + encodeURIComponent(pdfUrl) +'&embedded=true';
-  }
-
-  // Resume download button
-  const downloadBtn = document.getElementById('downloadResumeBtn');
-
-  if (downloadBtn) {
-    downloadBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-
-      fetch(downloadBtn.href)
-        .then((res) => res.blob())
-        .then((blob) => {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-
-          a.href = url;
-          a.download = 'Pavan_Maddipatla_resume.pdf';
-
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-
-          URL.revokeObjectURL(url);
-        })
-        .catch(() => {
-          window.open(downloadBtn.href, '_blank');
-        });
-    });
-  }
-
-});
-
-    // Resume PDF fallback: if iframe fails to load, show fallback message
-    const resumeIframe = document.querySelector('.resume-iframe');
-    const resumeFallback = document.querySelector('.resume-fallback');
-    if (resumeIframe && resumeFallback) {
-        resumeIframe.addEventListener('error', () => {
-            resumeIframe.style.display = 'none';
-            resumeFallback.style.display = 'block';
-        });
-        // Also check after a short delay (file:// protocol won't fire error)
-        setTimeout(() => {
+        iframe.addEventListener('load', () => {
             try {
-                if (!resumeIframe.contentDocument && !resumeIframe.contentWindow) {
-                    resumeIframe.style.display = 'none';
-                    resumeFallback.style.display = 'block';
+                // If we can access contentDocument, browser loaded it as HTML (not PDF plugin)
+                const doc = iframe.contentWindow.document;
+                const body = doc.body;
+                // Empty body or embed/object = PDF plugin handling it
+                if (body && body.children.length > 0) {
+                    const tag = body.children[0].tagName;
+                    if (tag === 'EMBED' || tag === 'OBJECT') { pdfLoaded = true; return; }
                 }
-            } catch (e) {
-                // Cross-origin or file not found — show fallback
-                resumeIframe.style.display = 'none';
-                resumeFallback.style.display = 'block';
+                // If body is empty or has no meaningful content, PDF didn't render
+                if (!body || body.scrollHeight < 100) {
+                    card.style.display = 'none';
+                    prevBtn.style.display = 'inline-flex';
+                } else { pdfLoaded = true; }
+            } catch (_) {
+                // Cross-origin error = PDF plugin rendered it natively (good)
+                pdfLoaded = true;
             }
-        }, 1000);
+        });
+
+        iframe.addEventListener('error', () => {
+            card.style.display = 'none';
+            prevBtn.style.display = 'inline-flex';
+        });
+
+        // Safety net: if nothing loaded after 5s, show fallback
+        setTimeout(() => {
+            if (!pdfLoaded) {
+                card.style.display = 'none';
+                prevBtn.style.display = 'inline-flex';
+            }
+        }, 5000);
     }
 });
-says // Navigation & Section switching document.addEventListener('DOMContentLoaded', () => { const navLinks = document.querySelectorAll('.nav-link'); const sections = document.querySelectorAll('.section'); const heroTitle = document.getElementById('heroTitle'); const heroSubtitle = document.getElementById('heroSubtitle'); const sectionMeta = { home: { title: 'Home', subtitle: 'Let\'s connect on LinkedIn' }, about: { title: 'About Me', subtitle: 'Specializing in intuitive, scalable, and visually engaging web applications' }, work: { title: 'Work', subtitle: 'Experience, skills, and technologies I work with' }, resume: { title: 'Resume', subtitle: 'Download or preview my professional resume' }, contact: { title: 'Contact', subtitle: 'Let\'s connect — I\'m open to new opportunities' } }; navLinks.forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); const target = link.dataset.section; navLinks.forEach(l => l.classList.remove('active')); link.classList.add('active'); sections.forEach(s => s.classList.remove('active')); document.getElementById(target).classList.add('active'); // Update hero heading const meta = sectionMeta[target]; if (meta) { heroTitle.textContent = meta.title; heroSubtitle.innerHTML = meta.subtitle; } }); }); // Copy button functionality document.querySelectorAll('.copy-btn').forEach(btn => { btn.addEventListener('click', () => { const text = btn.getAttribute('data-copy'); navigator.clipboard.writeText(text).then(() => { btn.classList.add('copied'); const icon = btn.querySelector('i'); icon.className = 'fas fa-check'; setTimeout(() => { btn.classList.remove('copied'); icon.className = 'fas fa-copy'; }, 1500); }); }); }); // Resume PDF fallback: if iframe fails to load, show fallback message const resumeIframe = document.querySelector('.resume-iframe'); const resumeFallback = document.querySelector('.resume-fallback'); if (resumeIframe && resumeFallback) { resumeIframe.addEventListener('error', () => { resumeIframe.style.display = 'none'; resumeFallback.style.display = 'block'; }); // Also check after a short delay (file:// protocol won't fire error) setTimeout(() => { try { if (!resumeIframe.contentDocument && !resumeIframe.contentWindow) { resumeIframe.style.display = 'none'; resumeFallback.style.display = 'block'; } } catch (e) { // Cross-origin or file not found — show fallback resumeIframe.style.display = 'none'; resumeFallback.style.display = 'block'; } }, 1000); } });
